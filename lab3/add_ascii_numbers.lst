@@ -1,0 +1,145 @@
+   1 0000               # File:		add_ascii_numbers.asm
+   2 0000               # Author:	K. Reek
+   3 0000               # Contributors:	P. White, W. Carithers
+   4 0000               #		Nicholas Graca
+   5 0000               #
+   6 0000               # Updates:
+   7 0000               #		3/2004	M. Reek, named constants
+   8 0000               #		10/2007 W. Carithers, alignment
+   9 0000               #		09/2009 W. Carithers, separate assembly
+  10 0000               #
+  11 0000               # Description:	Add two ASCII numbers and store the result in ASCII.
+  12 0000               #
+  13 0000               # Arguments:	a0: address of parameter block.  The block consists of
+  14 0000               #		four words that contain (in this order):
+  15 0000               #
+  16 0000               #			address of first input string
+  17 0000               #			address of second input string
+  18 0000               #			address where result should be stored
+  19 0000               #			length of the strings and result buffer
+  20 0000               #
+  21 0000               #		(There is actually other data after this in the
+  22 0000               #		parameter block, but it is not relevant to this routine.)
+  23 0000               #
+  24 0000               # Returns:	The result of the addition, in the buffer specified by
+  25 0000               #		the parameter block.
+  26 0000               #
+  27 0000               
+  28 0000               	.globl	add_ascii_numbers
+  29 0000               
+  30 0000               add_ascii_numbers:
+  31 0000               A_FRAMESIZE = 40
+  32 0000               
+  33 0000               #
+  34 0000               # Save registers ra and s0 - s7 on the stack.
+  35 0000               #
+  36 0000 23BDFFD8		addi 	$sp, $sp, -A_FRAMESIZE
+  37 0004 AFBF0024		sw 	$ra, -4+A_FRAMESIZE($sp)
+  38 0008 AFB7001C		sw 	$s7, 28($sp)
+  39 000c AFB60018		sw 	$s6, 24($sp)
+  40 0010 AFB50014		sw 	$s5, 20($sp)
+  41 0014 AFB40010		sw 	$s4, 16($sp)
+  42 0018 AFB3000C		sw 	$s3, 12($sp)
+  43 001c AFB20008		sw 	$s2, 8($sp)
+  44 0020 AFB10004		sw 	$s1, 4($sp)
+  45 0024 AFB00000		sw 	$s0, 0($sp)
+  46 0028               	
+  47 0028               # ##### BEGIN STUDENT CODE BLOCK 1 #####
+  48 0028 8C890000	        lw      $t1, 0($a0)             #digit one is in t1
+  49 002c 24850000	        la      $a1, 0($a0)
+  50 0030 8C8A0004	        lw      $t2, 4($a0)             #digit two is in t2
+  51 0034 24860004	        la      $a2, 4($a0)
+  52 0038 8C8B0008	        lw      $t3, 8($a0)             #address of result in t3
+  53 003c 0160A821	        move    $s5, $t3
+  54 0040 8C8C000C	        lw      $t4, 12($a0)            #length of strings in t4
+  55 0044 01808821	        move    $s1, $t4                #s1 hold the place in the number to add
+  56 0048 0800002B	        j       getDigit1
+  57 004c               
+  58 004c               math:
+  59 004c 1180002B	        beq     $t4, $zero, done
+  60 0050 81320000	        lb      $s2, 0($t1)
+  61 0054 81530000	        lb      $s3, 0($t2)
+  62 0058 0253A020	        add     $s4, $s2, $s3
+  63 005c 240DFFD0	        li      $t5, -48
+  64 0060 028DA020	        add     $s4, $s4, $t5
+  65 0064 340D003A	        li      $t5 , 58
+  66 0068 028D682A	        slt     $t5, $s4, $t5
+  67 006c 11A00007	        beq     $t5, $zero, carry       #check if you need to carry
+  68 0070 0800001D	        j       moreMath
+  69 0074               
+  70 0074               moreMath:
+  71 0074 A1740000	        sb      $s4, 0($t3)             #put the digit in the result
+  72 0078 256BFFFF	        la      $t3, -1($t3)            #move all the pointers over
+  73 007c 2529FFFF	        la      $t1, -1($t1)            #^
+  74 0080 254AFFFF	        la      $t2, -1($t2)            #^
+  75 0084 018E6020	        add     $t4, $t4, $t6           #decrement the counter
+  76 0088 08000013	        j       math
+  77 008c               
+  78 008c               carry:
+  79 008c 240DFFF6	        li      $t5, -10
+  80 0090 028DA020	        add     $s4, $s4, $t5           #make the number what it should be
+  81 0094 2536FFFF	        la      $s6, -1($t1)
+  82 0098 82D20000	        lb      $s2, 0($s6)
+  83 009c 340D0001	        li      $t5, 1
+  84 00a0 024D9020	        add     $s2, $s2, $t5           #add one to the next spot over
+  85 00a4 A2D20000	        sb      $s2, 0($s6)
+  86 00a8 0800001D	        j       moreMath       
+  87 00ac               
+  88 00ac               getDigit1:
+  89 00ac 1180000B	        beq     $t4, $zero, storeDigit1
+  90 00b0 240EFFFF	        li      $t6, -1
+  91 00b4 018E6020	        add     $t4, $t4, $t6
+  92 00b8 25290001	        la      $t1, 1($t1)             #t1 has address of last byte in d1
+  93 00bc 256B0001	        la      $t3, 1($t3)
+  94 00c0 0800002B	        j       getDigit1
+  95 00c4               
+  96 00c4               getDigit2:
+  97 00c4 11800008	        beq     $t4, $zero, storeDigit2
+  98 00c8 240EFFFF	        li      $t6, -1
+  99 00cc 018E6020	        add     $t4, $t4, $t6
+ 100 00d0 254A0001	        la      $t2, 1($t2)             #t2 is at the last spot in the digit
+ 101 00d4 256B0001	        la      $t3, 1($t3)             #t3 is at the last spot in the result
+ 102 00d8 08000031	        j       getDigit2       
+ 103 00dc               
+ 104 00dc               storeDigit1:
+ 105 00dc 02206021	        move    $t4, $s1
+ 106 00e0 02A05821	        move    $t3, $s5
+ 107 00e4 08000031	        j       getDigit2
+ 108 00e8               
+ 109 00e8               storeDigit2:
+ 110 00e8 02206021	        move    $t4, $s1
+ 111 00ec 256BFFFF	        la      $t3, -1($t3)            #put the pointers at the last digit
+ 112 00f0 2529FFFF	        la      $t1, -1($t1)            #^
+ 113 00f4 254AFFFF	        la      $t2, -1($t2)            #^
+ 114 00f8 08000013	        j       math
+ 115 00fc               
+ 116 00fc               done:
+ 117 00fc               # ###### END STUDENT CODE BLOCK 1 ######
+ 118 00fc               
+ 119 00fc               #
+ 120 00fc               # Restore registers ra and s0 - s7 from the stack.
+ 121 00fc               #
+ 122 00fc 8FBF0024		lw 	$ra, -4+A_FRAMESIZE($sp)
+ 123 0100 8FB7001C		lw 	$s7, 28($sp)
+ 124 0104 8FB60018		lw 	$s6, 24($sp)
+ 125 0108 8FB50014		lw 	$s5, 20($sp)
+ 126 010c 8FB40010		lw 	$s4, 16($sp)
+ 127 0110 8FB3000C		lw 	$s3, 12($sp)
+ 128 0114 8FB20008		lw 	$s2, 8($sp)
+ 129 0118 8FB10004		lw 	$s1, 4($sp)
+ 130 011c 8FB00000		lw 	$s0, 0($sp)
+ 131 0120 23BD0028		addi 	$sp, $sp, A_FRAMESIZE
+ 132 0124               
+ 133 0124 03E00008		jr	$ra			# Return to the caller.
+
+
+A_FRAMESIZE        = 00000028   
+add_ascii_numbers    00000000 RG text 
+carry                0000008C R  text 
+done                 000000FC R  text 
+getDigit1            000000AC R  text 
+getDigit2            000000C4 R  text 
+math                 0000004C R  text 
+moreMath             00000074 R  text 
+storeDigit1          000000DC R  text 
+storeDigit2          000000E8 R  text 

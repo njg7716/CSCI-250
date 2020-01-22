@@ -1,0 +1,155 @@
+   1 0000               #
+   2 0000               # FILE:         $File$
+   3 0000               # AUTHOR:       Phil White, RIT 2016
+   4 0000               #               
+   5 0000               # CONTRIBUTORS:
+   6 0000               #		Nicholas Graca
+   7 0000               #
+   8 0000               # DESCRIPTION:
+   9 0000               #	This file contains the merge function of mergesort
+  10 0000               #
+  11 0000               
+  12 0000               #-------------------------------
+  13 0000               
+  14 0000               #
+  15 0000               # Numeric Constants
+  16 0000               #
+  17 0000               
+  18 0000               PRINT_STRING = 4
+  19 0000               PRINT_INT = 1
+  20 0000               
+  21 0000               
+  22 0000               #***** BEGIN STUDENT CODE BLOCK 2 ***************************
+  23 0000               
+  24 0000               
+  25 0000               #
+  26 0000               # Make sure to add any .globl that you need here
+  27 0000               #
+  28 0000                       .globl  sort
+  29 0000               #
+  30 0000               # Name:         merge
+  31 0000               # Description:  takes two individually sorted areas of an array and
+  32 0000               #		merges them into a single sorted area
+  33 0000               #
+  34 0000               #		The two areas are defined between (inclusive)
+  35 0000               #		area1:	low   - mid
+  36 0000               #		area2:	mid+1 - high
+  37 0000               #
+  38 0000               #		Note that the area will be contiguous in the array
+  39 0000               #
+  40 0000               # Arguments:    a0:     a parameter block containing 3 values
+  41 0000               #			- the address of the array to sort
+  42 0000               #			- the address of the scrap array needed by merge
+  43 0000               #			- the address of the compare function to use
+  44 0000               #			  when ordering data
+  45 0000               #               a1:     the index of the first element of the area
+  46 0000               #               a2:     the index of the last element of the area
+  47 0000               #               a3:     the index of the middle element of the area
+  48 0000               # Returns:      none
+  49 0000               # Destroys:     t0,t1
+  50 0000               #
+  51 0000               merge:
+  52 0000 8C900000	        lw      $s0, 0($a0)             #s0 is the beginning of first array
+  53 0004 8C910004	        lw      $s1, 4($a0)             #s1 is the beginning of scrap array
+  54 0008 8C920008	        lw      $s2, 8($a0)             #s2 is compare function
+  55 000c 34090004	        li      $t1, 4
+  56 0010 01270018	        mult    $t1, $a3
+  57 0014 00004812	        mflo    $t1
+  58 0018 02099820	        add     $s3, $s0, $t1           #s3 is at beginning of second array
+  59 001c 22730004	        addi    $s3, $s3, 4
+  60 0020 00A0A021	        move    $s4, $a1                #current position in the first array
+  61 0024 00E0A821	        move    $s5, $a3                #s5 is the counter array 2
+  62 0028 22B50001	        addi    $s5, $s5, 1             #current position in second array
+  63 002c 00C0B021	        move    $s6, $a2
+  64 0030 03E0B821	        move    $s7, $ra
+  65 0034 00A07021	        move    $t6, $a1                #save the indexes
+  66 0038 00C07821	        move    $t7, $a2
+  67 003c 08000010	        j       while
+  68 0040               
+  69 0040               while:
+  70 0040 00F4402A	        slt     $t0, $a3, $s4
+  71 0044 15000017	        bne     $t0, $zero, emptysecond #if subarray 1 is empty, empty array 2
+  72 0048 01F5402A	        slt     $t0, $t7, $s5
+  73 004c 1500001D	        bne     $t0, $zero, emptyfirst  #if subarray 2 is empty, empty array 1
+  74 0050 8E040000	        lw      $a0, 0($s0)
+  75 0054 8E650000	        lw      $a1, 0($s3)   
+  76 0058 23BDFFF4	        addi    $sp, $sp, -12
+  77 005c AFAE0000	        sw      $t6, 0($sp)
+  78 0060 AFAF0004	        sw      $t7, 4($sp)
+  79 0064 AFBF0008	        sw      $ra, 8($sp)
+  80 0068 0240F809	        jalr    $s2                     #compare function
+  81 006c 8FAE0000	        lw      $t6, 0($sp)
+  82 0070 8FAF0004	        lw      $t7, 4($sp)
+  83 0074 8FBF0008	        lw      $ra, 8($sp)
+  84 0078 10400005	        beq     $v0, $zero, second
+  85 007c AE240000	        sw      $a0, 0($s1)             #put a0 in scrap array
+  86 0080 22310004	        addi    $s1, $s1, 4
+  87 0084 22100004	        addi    $s0, $s0, 4
+  88 0088 22940001	        addi    $s4, $s4, 1
+  89 008c 08000010	        j       while        
+  90 0090               
+  91 0090               second:                                 #put a1 in scrap array
+  92 0090 AE250000	        sw      $a1, 0($s1)
+  93 0094 22310004	        addi    $s1, $s1, 4
+  94 0098 22730004	        addi    $s3, $s3, 4
+  95 009c 22B50001	        addi    $s5, $s5, 1
+  96 00a0 08000010	        j       while
+  97 00a4               
+  98 00a4               emptysecond:
+  99 00a4 01F5402A	        slt     $t0, $t7, $s5
+ 100 00a8 1500000E	        bne     $t0, $zero, almost
+ 101 00ac 8E650000	        lw      $a1, 0($s3)
+ 102 00b0 AE250000	        sw      $a1, 0($s1)
+ 103 00b4 22730004	        addi    $s3, $s3, 4
+ 104 00b8 22310004	        addi    $s1, $s1, 4
+ 105 00bc 22B50001	        addi    $s5, $s5, 1
+ 106 00c0 08000029	        j       emptysecond
+ 107 00c4               
+ 108 00c4               emptyfirst:
+ 109 00c4 00F4402A	        slt     $t0, $a3, $s4
+ 110 00c8 15000006	        bne     $t0, $zero, almost
+ 111 00cc 8E040000	        lw      $a0, 0($s0)             #s0 cursor in first array
+ 112 00d0 AE240000	        sw      $a0, 0($s1)
+ 113 00d4 22310004	        addi    $s1, $s1, 4
+ 114 00d8 22100004	        addi    $s0, $s0, 4
+ 115 00dc 22940001	        addi    $s4, $s4, 1
+ 116 00e0 08000031	        j       emptyfirst
+ 117 00e4               
+ 118 00e4               almost:
+ 119 00e4 2408FFFC	        li      $t0, -4                 #move back to beginning of array
+ 120 00e8 02C80018	        mult    $s6, $t0
+ 121 00ec 00004012	        mflo    $t0
+ 122 00f0 02088020	        add     $s0, $s0, $t0
+ 123 00f4 02288820	        add     $s1, $s1, $t0
+ 124 00f8 0800003F	        j       copy
+ 125 00fc               
+ 126 00fc               copy:
+ 127 00fc 01EE402A	        slt     $t0, $t7, $t6
+ 128 0100 15000006	        bne     $t0, $zero, final
+ 129 0104 8E280000	        lw      $t0, 0($s1)             #take out of scrap array
+ 130 0108 AE080000	        sw      $t0, 0($s0)             #put in final array
+ 131 010c 22310004	        addi    $s1, $s1, 4             #move to next index
+ 132 0110 22100004	        addi    $s0, $s0, 4
+ 133 0114 21CE0001	        addi    $t6, $t6, 1
+ 134 0118 0800003F	        j       copy
+ 135 011c               
+ 136 011c               final:
+ 137 011c 03E00008	        jr      $ra
+ 138 0120               # ********** END STUDENT CODE BLOCK 2 **********
+ 139 0120               
+ 140 0120               #
+ 141 0120               # End of Merge routine.
+ 142 0120               #
+
+
+PRINT_INT     = 00000001   
+PRINT_STRING  = 00000004   
+almost          000000E4 R  text 
+copy            000000FC R  text 
+emptyfirst      000000C4 R  text 
+emptysecond     000000A4 R  text 
+final           0000011C R  text 
+merge           00000000 R  text 
+second          00000090 R  text 
+sort            ******** XG
+while           00000040 R  text 

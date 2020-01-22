@@ -1,0 +1,217 @@
+   1 0000               #File:		print_stuff.asm
+   2 0000               # Author:	Nicholas Graca
+   3 0000               # Description:	Print out all the banners and the game board
+   4 0000               #
+   5 0000               # Purpose:	Make it look pretty to the user
+   6 0000               PRINT_INT =     1
+   7 0000               PRINT_STRING =  4
+   8 0000               READ_INT =      5
+   9 0000               READ_STRING =   8
+  10 0000               EXIT =  10
+  11 0000               
+  12 0000                       .data
+  13 0000               	.align 2
+  14 0000               
+  15 0000               gen_part1:
+  16 0000 0A3D3D3D	        .asciiz "\n====    GENERATION "
+          3D202020
+          2047454E
+          45524154
+          494F4E20
+          00      
+  17 0015               
+  18 0015               gen_part2:
+  19 0015 20202020	        .asciiz "    ====\n+"
+          3D3D3D3D
+          0A2B00  
+  20 0020               
+  21 0020               side:   
+  22 0020 7C00    	        .asciiz "|"
+  23 0022               
+  24 0022               top:
+  25 0022 2D00    	        .asciiz "-"
+  26 0024               
+  27 0024               corner:
+  28 0024 2B00    	        .asciiz "+"
+  29 0026               
+  30 0026               space:
+  31 0026 2000    	        .asciiz " "
+  32 0028               
+  33 0028               A:
+  34 0028 4100    	        .asciiz "A"
+  35 002a               
+  36 002a               B:
+  37 002a 4200    	        .asciiz "B"
+  38 002c               
+  39 002c               new_line:
+  40 002c 0A00    	        .asciiz "\n"
+  41 002e               
+  42 0000               	.text
+  43 0000               	.align 2
+  44 0000                       .globl board
+  45 0000                       .globl copy
+  46 0000               
+  47 0000               #Prints the generation number
+  48 0000               print_board:
+  49 0000 03E0B821	        move    $s7, $ra
+  50 0004 34020004	        li      $v0, PRINT_STRING
+  51 0008 3C040000	        la      $a0, gen_part1
+     000c 34840000
+  52 0010 0000000C	        syscall
+  53 0014 34020001	        li      $v0, PRINT_INT
+  54 0018 03002021	        move    $a0, $t8                #t8 is gen counter
+  55 001c 0000000C	        syscall
+  56 0020 34020004	        li      $v0, PRINT_STRING
+  57 0024 3C040000	        la      $a0, gen_part2
+     0028 34840000
+  58 002c 0000000C	        syscall
+  59 0030 0000C821	        move    $t9, $zero
+  60 0034 0C000051	        jal     print_top
+  61 0038 0C000058	        jal     print_corner
+  62 003c 34020004	        li      $v0, PRINT_STRING
+  63 0040 3C040000	        la      $a0, new_line
+     0044 34840000
+  64 0048 0000000C	        syscall
+  65 004c 0000A021	        move    $s4, $zero              #col counter
+  66 0050 34160002	        li      $s6, 2
+  67 0054 0316001A	        div     $t8, $s6
+  68 0058 0000B010	        mfhi    $s6
+  69 005c 12C00004	        beq     $s6, $zero, og_board    #checks the generation to knwo which
+  70 0060                                                       #board to print
+  71 0060 3C150000	        la      $s5, copy               #address pointer
+     0064 36B50000
+  72 0068 0000B021	        move    $s6, $zero
+  73 006c 08000029	        j       print_array        
+  74 0070               
+  75 0070               og_board:
+  76 0070 3C150000	        la      $s5, board              #address pointer
+     0074 36B50000
+  77 0078 0000B021	        move    $s6, $zero              #counter
+  78 007c 08000029	        j       print_array
+  79 0080               
+  80 0080               #bottom and top are the same so write it once
+  81 0080               bottom:
+  82 0080 0C000058	        jal     print_corner
+  83 0084 0000C821	        move    $t9, $zero
+  84 0088 0C000051	        jal     print_top
+  85 008c 0C000058	        jal     print_corner
+  86 0090 34020004	        li      $v0, PRINT_STRING
+  87 0094 3C040000	        la      $a0, new_line
+     0098 34840000
+  88 009c 0000000C	        syscall
+  89 00a0 02E00008	        jr      $s7
+  90 00a4                       
+  91 00a4               #loops through the whole array and prints the character that corresponds to the
+  92 00a4               #value. Also prints the sides and new lines for the new row
+  93 00a4               print_array:
+  94 00a4 1216FFF6	        beq     $s0, $s6, bottom
+  95 00a8 34020004	        li      $v0, PRINT_STRING
+  96 00ac 3C040000	        la      $a0, side
+     00b0 34840000
+  97 00b4 0000000C	        syscall
+  98 00b8 0C00003A	        jal     inner_loop
+  99 00bc 34020004	        li      $v0, PRINT_STRING
+ 100 00c0 3C040000	        la      $a0, side
+     00c4 34840000
+ 101 00c8 0000000C	        syscall
+ 102 00cc 34020004	        li      $v0, PRINT_STRING
+ 103 00d0 3C040000	        la      $a0, new_line
+     00d4 34840000
+ 104 00d8 0000000C	        syscall
+ 105 00dc 0000A021	        move    $s4, $zero
+ 106 00e0 22D60001	        addi    $s6, $s6, 1
+ 107 00e4 08000029	        j       print_array
+ 108 00e8               
+ 109 00e8               #just loops through the row and calls the write print function
+ 110 00e8               inner_loop:
+ 111 00e8 12900027	        beq     $s4, $s0, bac
+ 112 00ec 82B90000	        lb      $t9, 0($s5)
+ 113 00f0 13200007	        beq     $t9, $zero, print_space
+ 114 00f4 34070001	        li      $a3, 1
+ 115 00f8 10F9000A	        beq     $a3, $t9, print_A
+ 116 00fc 34020004	        li      $v0, PRINT_STRING
+ 117 0100 3C040000	        la      $a0, B
+     0104 34840000
+ 118 0108 0000000C	        syscall                         #prints a B for 2
+ 119 010c 0800004E	        j       inner_loop_end
+ 120 0110               
+ 121 0110               #prints a space for 0
+ 122 0110               print_space:
+ 123 0110 34020004	        li      $v0, PRINT_STRING
+ 124 0114 3C040000	        la      $a0, space
+     0118 34840000
+ 125 011c 0000000C	        syscall
+ 126 0120 0800004E	        j       inner_loop_end
+ 127 0124               
+ 128 0124               #prints an A for 1
+ 129 0124               print_A:
+ 130 0124 34020004	        li      $v0, PRINT_STRING
+ 131 0128 3C040000	        la      $a0, A
+     012c 34840000
+ 132 0130 0000000C	        syscall
+ 133 0134 0800004E	        j       inner_loop_end
+ 134 0138               
+ 135 0138               
+ 136 0138               inner_loop_end:
+ 137 0138 22940001	        addi    $s4, $s4, 1
+ 138 013c 22B50001	        addi    $s5, $s5, 1
+ 139 0140 0800003A	        j       inner_loop
+ 140 0144               
+ 141 0144               #prints a hyphen
+ 142 0144               print_top:
+ 143 0144 13300010	        beq     $t9, $s0, bac
+ 144 0148 34020004	        li      $v0, PRINT_STRING
+ 145 014c 3C040000	        la      $a0, top
+     0150 34840000
+ 146 0154 0000000C	        syscall
+ 147 0158 23390001	        addi    $t9, $t9, 1
+ 148 015c 08000051	        j       print_top
+ 149 0160               
+ 150 0160               #prints a plus for the corners
+ 151 0160               print_corner:
+ 152 0160 34020004	        li      $v0, PRINT_STRING
+ 153 0164 3C040000	        la      $a0, corner
+     0168 34840000
+ 154 016c 0000000C	        syscall
+ 155 0170 03E00008	        jr      $ra
+ 156 0174               
+ 157 0174               #prints a bar for the side
+ 158 0174               print_side:
+ 159 0174 34020004	        li      $v0, PRINT_STRING
+ 160 0178 3C040000	        la      $a0, side
+     017c 34840000
+ 161 0180 0000000C	        syscall
+ 162 0184 03E00008	        jr      $ra
+ 163 0188                       
+ 164 0188               bac:
+ 165 0188 03E00008	        jr      $ra
+
+
+A                 00000028 R  data 
+B                 0000002A R  data 
+EXIT            = 0000000A   
+PRINT_INT       = 00000001   
+PRINT_STRING    = 00000004   
+READ_INT        = 00000005   
+READ_STRING     = 00000008   
+bac               00000188 R  text 
+board             ******** XG
+bottom            00000080 R  text 
+copy              ******** XG
+corner            00000024 R  data 
+gen_part1         00000000 R  data 
+gen_part2         00000015 R  data 
+inner_loop        000000E8 R  text 
+inner_loop_end    00000138 R  text 
+new_line          0000002C R  data 
+og_board          00000070 R  text 
+print_A           00000124 R  text 
+print_array       000000A4 R  text 
+print_board       00000000 R  text 
+print_corner      00000160 R  text 
+print_side        00000174 R  text 
+print_space       00000110 R  text 
+print_top         00000144 R  text 
+side              00000020 R  data 
+space             00000026 R  data 
+top               00000022 R  data 

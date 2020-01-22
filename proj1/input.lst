@@ -1,0 +1,403 @@
+   1 0000               # File:		input.asm
+   2 0000               # Author:	Nicholas Graca
+   3 0000               # Description:	Ask the user for input and check if it is valid
+   4 0000               #
+   5 0000               # Purpose:	Make sure no one can break my code
+   6 0000               
+   7 0000               #Ask for input and check if it is worthy
+   8 0000               
+   9 0000               #syscall codes  
+  10 0000               INT_INT =	1
+  11 0000               PRINT_STRING = 	4
+  12 0000               READ_INT = 	5
+  13 0000               READ_STRING =   8
+  14 0000               EXIT =  10
+  15 0000               
+  16 0000                       .data
+  17 0000                       .align 2
+  18 0000               
+  19 0000               size:
+  20 0000 00000000	        .word 0
+  21 0004               gens:
+  22 0004 00000000	        .word 0
+  23 0008               live_A:
+  24 0008 00000000	        .word 0
+  25 000c               live_B:
+  26 000c 00000000	        .word 0
+  27 0010                       
+  28 0010               board:
+  29 0010 00000000	        .space 90
+          00000000
+          00000000
+          00000000
+          00000000
+          00000000
+  30 006a               
+  31 006a               copy:
+  32 006a 00000000	        .space 90
+          00000000
+          00000000
+          00000000
+          00000000
+          00000000
+  33 00c4               
+  34 00c4               banner:
+  35 00c4 0A2A2A2A	        .asciiz "\n**********************\n****    Colony    ****\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A0A
+  36 00f4               
+  37 00f4               banner_2:
+  38 00f4 2A2A2A2A	        .asciiz "**********************\n\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A0A0A
+  39 010d               
+  40 010d               prompt1:
+  41 010d 456E7465	        .asciiz "Enter board size: "
+          7220626F
+          61726420
+          73697A65
+          3A2000  
+  42 0120               
+  43 0120               error_board_size:
+  44 0120 0A574152	        .asciiz "\nWARNING: illegal board size, try again: "
+          4E494E47
+          3A20696C
+          6C656761
+          6C20626F
+          61726420
+  45 014a               
+  46 014a               prompt2:
+  47 014a 0A456E74	        .asciiz "\nEnter number of generations to run: "
+          6572206E
+          756D6265
+          72206F66
+          2067656E
+          65726174
+  48 0170               
+  49 0170               error_generation:
+  50 0170 0A574152	        .asciiz "\nWARNING: illegal number of generations, try again: "
+          4E494E47
+          3A20696C
+          6C656761
+          6C206E75
+          6D626572
+  51 01a5               
+  52 01a5               prompt3:
+  53 01a5 0A456E74	        .asciiz "\nEnter number of live cells for colony A: "
+          6572206E
+          756D6265
+          72206F66
+          206C6976
+          65206365
+  54 01d0               
+  55 01d0               prompt4:
+  56 01d0 0A456E74	        .asciiz "\nEnter number of live cells for colony B: "
+          6572206E
+          756D6265
+          72206F66
+          206C6976
+          65206365
+  57 01fb               error_cells:
+  58 01fb 0A574152	        .asciiz "\nWARNING: illegal number of live cells, try again: "
+          4E494E47
+          3A20696C
+          6C656761
+          6C206E75
+          6D626572
+  59 022f               
+  60 022f               start:
+  61 022f 0A537461	        .asciiz "\nStart entering locations\n"
+          72742065
+          6E746572
+          696E6720
+          6C6F6361
+          74696F6E
+  62 024a               
+  63 024a               error_location:
+  64 024a 0A455252	        .asciiz "\nERROR: illegal point location\n"
+          4F523A20
+          696C6C65
+          67616C20
+          706F696E
+          74206C6F
+  65 026a               
+  66 026a               newline:
+  67 026a 0A00    	        .asciiz "\n"
+  68 026c               
+  69 0000                       .text
+  70 0000                       .align 2
+  71 0000               
+  72 0000               #print the banner
+  73 0000               input: 
+  74 0000 03E0A821	        move    $s5, $ra
+  75 0004 34020004	        li      $v0, PRINT_STRING
+  76 0008 3C040000	        la      $a0, banner
+     000c 34840000
+  77 0010 0000000C	        syscall
+  78 0014 34020004	        li      $v0, PRINT_STRING
+  79 0018 3C040000	        la      $a0, banner_2
+     001c 34840000
+  80 0020 0000000C	        syscall
+  81 0024 34020004	        li      $v0, PRINT_STRING
+  82 0028 3C040000	        la      $a0, prompt1
+     002c 34840000
+  83 0030 0000000C	        syscall
+  84 0034 3408005A	        li      $t0, 90
+  85 0038 3C090000	        la      $t1, board
+     003c 35290000
+  86 0040 3C0A0000	        la      $t2, copy
+     0044 354A0000
+  87 0048               
+  88 0048               #make sure the board is empty before you add to it
+  89 0048               clear_board:
+  90 0048 11000006	        beq     $t0, $zero, get_size
+  91 004c A1200000	        sb      $zero, 0($t1)
+  92 0050 A1400000	        sb      $zero, 0($t2)
+  93 0054 21290001	        addi    $t1, $t1, 1
+  94 0058 214A0001	        addi    $t2, $t2, 1
+  95 005c 2108FFFF	        addi    $t0, $t0, -1
+  96 0060 08000012	        j       clear_board
+  97 0064               
+  98 0064               #prompts the user for the size of the board and checks that it is legal
+  99 0064               get_size:
+ 100 0064 34020005	        li      $v0, READ_INT
+ 101 0068 3C040000	        la      $a0, size
+     006c 34840000
+ 102 0070 0000000C	        syscall
+ 103 0074 00408021	        move    $s0, $v0                #s0 is board size
+ 104 0078 3408001F	        li      $t0, 31
+ 105 007c 0208482A	        slt     $t1, $s0, $t0
+ 106 0080 1120007F	        beq     $t1, $zero, size_err
+ 107 0084 34080004	        li      $t0, 4
+ 108 0088 0208482A	        slt     $t1, $s0, $t0
+ 109 008c 1520007C	        bne     $t1, $zero, size_err
+ 110 0090 34020004	        li      $v0, PRINT_STRING
+ 111 0094 3C040000	        la      $a0, prompt2
+     0098 34840000
+ 112 009c 0000000C	        syscall
+ 113 00a0               
+ 114 00a0               #prompts user for number of generations and checks it
+ 115 00a0               get_gens:
+ 116 00a0 34020005	        li      $v0, READ_INT
+ 117 00a4 3C040000	        la      $a0, gens
+     00a8 34840000
+ 118 00ac 0000000C	        syscall
+ 119 00b0 00408821	        move    $s1, $v0                #s1 is number of gens
+ 120 00b4 34080015	        li      $t0, 21
+ 121 00b8 0228482A	        slt     $t1, $s1, $t0
+ 122 00bc 11200075	        beq     $t1, $zero, gen_err
+ 123 00c0 0200482A	        slt     $t1, $s0, $zero
+ 124 00c4 15200073	        bne     $t1, $zero, gen_err
+ 125 00c8 34020004	        li      $v0, PRINT_STRING
+ 126 00cc 3C040000	        la      $a0, prompt3
+     00d0 34840000
+ 127 00d4 0000000C	        syscall
+ 128 00d8               
+ 129 00d8               #gets the number of live cells from the user and checks it
+ 130 00d8               get_live_A:
+ 131 00d8 34020005	        li      $v0, READ_INT
+ 132 00dc 3C040000	        la      $a0, live_A
+     00e0 34840000
+ 133 00e4 0000000C	        syscall
+ 134 00e8 00409021	        move    $s2, $v0                #s2 is number of live A cells
+ 135 00ec 02100018	        mult    $s0, $s0
+ 136 00f0 00004012	        mflo    $t0
+ 137 00f4 0248482A	        slt     $t1, $s2, $t0
+ 138 00f8 1120006B	        beq     $t1, $zero, live_A_err
+ 139 00fc 0240482A	        slt     $t1, $s2, $zero
+ 140 0100 15200069	        bne     $t1, $zero, live_A_err
+ 141 0104 0200482A	        slt     $t1, $s0, $zero
+ 142 0108 15200067	        bne     $t1, $zero, live_A_err
+ 143 010c 34020004	        li      $v0, PRINT_STRING
+ 144 0110 3C040000	        la      $a0, start
+     0114 34840000
+ 145 0118 0000000C	        syscall
+ 146 011c 1240001B	        beq     $s2,$zero, get_live_B
+ 147 0120 0240B821	        move    $s7, $s2                #counter for corrs
+ 148 0124               
+ 149 0124               #loops and get the coordinates and checks them
+ 150 0124               coor_A:
+ 151 0124 12E00019	        beq     $s7, $zero, get_live_B
+ 152 0128 34020005	        li      $v0, READ_INT
+ 153 012c 3C040000	        la      $a0, newline
+     0130 34840000
+ 154 0134 0000000C	        syscall
+ 155 0138 00409821	        move    $s3, $v0                #s3 is the row
+ 156 013c 34020005	        li      $v0, READ_INT
+ 157 0140 3C040000	        la      $a0, newline
+     0144 34840000
+ 158 0148 0000000C	        syscall
+ 159 014c 0040A021	        move    $s4, $v0                #s4 is the col
+ 160 0150 0213502A	        slt     $t2, $s0, $s3           #check if row < size
+ 161 0154 15400045	        bne     $t2, $zero, bad_loc
+ 162 0158 0260502A	        slt     $t2, $s3, $zero         #check if row > 0
+ 163 015c 15400043	        bne     $t2, $zero, bad_loc
+ 164 0160 0214502A	        slt     $t2, $s0, $s4           #check if col < size
+ 165 0164 15400041	        bne     $t2, $zero, bad_loc
+ 166 0168 0280502A	        slt     $t2, $s4, $zero
+ 167 016c 1540003F	        bne     $t2, $zero, bad_loc
+ 168 0170 0C000094	        jal     compute_address
+ 169 0174 81690000	        lb      $t1, 0($t3)
+ 170 0178 1520003C	        bne     $t1, $zero, bad_loc
+ 171 017c 340A0001	        li      $t2, 1                  #1 represents A 
+ 172 0180 A16A0000	        sb      $t2, 0($t3)
+ 173 0184 22F7FFFF	        addi    $s7, $s7, -1            #sub 1 for edge case
+ 174 0188 08000049	        j       coor_A
+ 175 018c               
+ 176 018c               #gets the number of live B cells from user and checks it
+ 177 018c               get_live_B:
+ 178 018c 34020004	        li      $v0, PRINT_STRING
+ 179 0190 3C040000	        la      $a0, prompt4
+     0194 34840000
+ 180 0198 0000000C	        syscall
+ 181 019c 34020005	        li      $v0, READ_INT
+ 182 01a0 3C040000	        la      $a0, live_B
+     01a4 34840000
+ 183 01a8 0000000C	        syscall
+ 184 01ac 00409021	        move    $s2, $v0                #s2 is number of live B cells
+ 185 01b0 02100018	        mult    $s0, $s0
+ 186 01b4 00004012	        mflo    $t0
+ 187 01b8 0248482A	        slt     $t1, $s2, $t0
+ 188 01bc 1120003F	        beq     $t1, $zero, live_B_err
+ 189 01c0 0240482A	        slt     $t1, $s2, $zero
+ 190 01c4 1520003D	        bne     $t1, $zero, live_B_err
+ 191 01c8 0200482A	        slt     $t1, $s0, $zero
+ 192 01cc 1520003B	        bne     $t1, $zero, live_B_err
+ 193 01d0 34020004	        li      $v0, PRINT_STRING
+ 194 01d4 3C040000	        la      $a0, start
+     01d8 34840000
+ 195 01dc 0000000C	        syscall
+ 196 01e0 1240003B	        beq     $s2, $zero, end
+ 197 01e4 0240B821	        move    $s7, $s2                #counter for coors
+ 198 01e8               
+ 199 01e8               #loops and gets all the corrdinates and checks them
+ 200 01e8               coor_B:
+ 201 01e8 12E00039	        beq     $s7, $zero, end
+ 202 01ec 34020005	        li      $v0, READ_INT
+ 203 01f0 3C040000	        la      $a0, newline
+     01f4 34840000
+ 204 01f8 0000000C	        syscall
+ 205 01fc 00409821	        move    $s3, $v0                #s3 is the row
+ 206 0200 34020005	        li      $v0, READ_INT
+ 207 0204 3C040000	        la      $a0, newline
+     0208 34840000
+ 208 020c 0000000C	        syscall
+ 209 0210 0040A021	        move    $s4, $v0                #s4 is the col
+ 210 0214 0213502A	        slt     $t2, $s0, $s3           #check if row < size
+ 211 0218 15400014	        bne     $t2, $zero, bad_loc
+ 212 021c 0260502A	        slt     $t2, $s3, $zero         #check if row > 0
+ 213 0220 15400012	        bne     $t2, $zero, bad_loc
+ 214 0224 0214502A	        slt     $t2, $s0, $s4           #check if col < size
+ 215 0228 15400010	        bne     $t2, $zero, bad_loc
+ 216 022c 0280502A	        slt     $t2, $s4, $zero
+ 217 0230 1540000E	        bne     $t2, $zero, bad_loc
+ 218 0234 0C000094	        jal     compute_address
+ 219 0238 81690000	        lb      $t1, 0($t3)
+ 220 023c 1520000B	        bne     $t1, $zero, bad_loc
+ 221 0240 340A0002	        li      $t2, 2                  #2 represents B 
+ 222 0244 A16A0000	        sb      $t2, 0($t3)
+ 223 0248 22F7FFFF	        addi    $s7, $s7, -1            #sub 1 for edge case
+ 224 024c 0800007A	        j       coor_B
+ 225 0250               
+ 226 0250               #finds the address in the board when given the row and col
+ 227 0250               compute_address:                        #s3 is row, s4 is col
+ 228 0250 02700018	        mult    $s3, $s0                #compute address to an B
+ 229 0254 0000C812	        mflo    $t9
+ 230 0258 0334C820	        add     $t9, $t9, $s4
+ 231 025c 3C0B0000	        la      $t3, board
+     0260 356B0000
+ 232 0264 01795820	        add     $t3, $t3, $t9           #t3 is the address you are looking for
+ 233 0268 03E00008	        jr      $ra
+ 234 026c               
+ 235 026c               
+ 236 026c               #if user messed up the input, tell them and ask again
+ 237 026c               bad_loc:
+ 238 026c 34020004	        li      $v0, PRINT_STRING
+ 239 0270 3C040000	        la      $a0, error_location
+     0274 34840000
+ 240 0278 0000000C	        syscall
+ 241 027c 080000B7	        j       breaks
+ 242 0280               
+ 243 0280               size_err:
+ 244 0280 34020004	        li      $v0, PRINT_STRING
+ 245 0284 3C040000	        la      $a0, error_board_size
+     0288 34840000
+ 246 028c 0000000C	        syscall
+ 247 0290 08000019	        j       get_size
+ 248 0294               
+ 249 0294               gen_err:
+ 250 0294 34020004	        li      $v0, PRINT_STRING
+ 251 0298 3C040000	        la      $a0, error_generation
+     029c 34840000
+ 252 02a0 0000000C	        syscall
+ 253 02a4 08000028	        j       get_gens
+ 254 02a8               
+ 255 02a8               live_A_err:
+ 256 02a8 34020004	        li      $v0, PRINT_STRING
+ 257 02ac 3C040000	        la      $a0, error_cells
+     02b0 34840000
+ 258 02b4 0000000C	        syscall
+ 259 02b8 08000036	        j       get_live_A
+ 260 02bc               
+ 261 02bc               live_B_err:
+ 262 02bc 34020004	        li      $v0, PRINT_STRING
+ 263 02c0 3C040000	        la      $a0, error_cells
+     02c4 34840000
+ 264 02c8 0000000C	        syscall
+ 265 02cc 08000063	        j       get_live_B
+ 266 02d0               
+ 267 02d0               end:
+ 268 02d0 3C120000	        la      $s2, board              #s2 is address of board
+     02d4 36520000
+ 269 02d8 02A00008	        jr      $s5
+ 270 02dc               
+ 271 02dc               breaks:
+ 272 02dc 3402000A	        li      $v0, 10
+ 273 02e0 0000000C	        syscall
+
+
+EXIT              = 0000000A   
+INT_INT           = 00000001   
+PRINT_STRING      = 00000004   
+READ_INT          = 00000005   
+READ_STRING       = 00000008   
+bad_loc             0000026C R  text 
+banner              000000C4 R  data 
+banner_2            000000F4 R  data 
+board               00000010 R  data 
+breaks              000002DC R  text 
+clear_board         00000048 R  text 
+compute_address     00000250 R  text 
+coor_A              00000124 R  text 
+coor_B              000001E8 R  text 
+copy                0000006A R  data 
+end                 000002D0 R  text 
+error_board_size    00000120 R  data 
+error_cells         000001FB R  data 
+error_generation    00000170 R  data 
+error_location      0000024A R  data 
+gen_err             00000294 R  text 
+gens                00000004 R  data 
+get_gens            000000A0 R  text 
+get_live_A          000000D8 R  text 
+get_live_B          0000018C R  text 
+get_size            00000064 R  text 
+input               00000000 R  text 
+live_A              00000008 R  data 
+live_A_err          000002A8 R  text 
+live_B              0000000C R  data 
+live_B_err          000002BC R  text 
+newline             0000026A R  data 
+prompt1             0000010D R  data 
+prompt2             0000014A R  data 
+prompt3             000001A5 R  data 
+prompt4             000001D0 R  data 
+size                00000000 R  data 
+size_err            00000280 R  text 
+start               0000022F R  data 

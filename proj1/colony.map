@@ -1,0 +1,118 @@
+Load map
+========
+
+Module:  colony.obj
+ Text segment:  820 bytes, load point 0x00400000
+ Symbols:
+               Name Section Mode    Value
+      neighbor_loop   Text   R   0x00400094
+                fin   Text   R   0x0040032c
+          check_col   Text   R   0x004002c0
+              count   Text   R   0x0040030c
+  compute_neighbors   Text   R   0x00400084
+         cont_neigh   Text   R   0x0040009c
+            go_back   Text   R   0x0040004c
+              add_A   Text   R   0x00400318
+              add_B   Text   R   0x00400324
+           cont_run   Text   R   0x00400064
+         copy_array   Text   R   0x00400030
+               col2   Text   R   0x004002d0
+               main   Text   R   0x00400000
+             more_A   Text   R   0x0040023c
+               row2   Text   R   0x004002ac
+             more_B   Text   R   0x0040027c
+          comp_addr   Text   R   0x004002f8
+            check_A   Text   R   0x004001f0
+         count_cont   Text   R   0x0040031c
+          check_row   Text   R   0x0040029c
+          comp_curr   Text   R   0x004002e4
+           run_loop   Text   R   0x0040005c
+          n_in_loop   Text   R   0x004000a8
+           clean_up   Text   R   0x00400050
+        end_in_loop   Text   R   0x00400214
+           center_A   Text   R   0x0040021c
+           center_B   Text   R   0x0040025c
+
+Module:  input.obj
+ Text segment:  740 bytes, load point 0x00400334
+ Data segment:  624 bytes, load point 0x10000000
+ Symbols:
+               Name Section Mode    Value
+           get_size   Text   R   0x00400398
+            prompt1   Data   R   0x1000010d
+           banner_2   Data   R   0x100000f4
+            prompt2   Data   R   0x1000014a
+            prompt3   Data   R   0x100001a5
+            prompt4   Data   R   0x100001d0
+   error_board_size   Data   R   0x10000120
+              board   Data   R   0x10000010
+         live_B_err   Text   R   0x004005f0
+              input   Text   R   0x00400334
+         get_live_A   Text   R   0x0040040c
+         get_live_B   Text   R   0x004004c0
+           READ_INT          A   0x00000005
+               gens   Data   R   0x10000004
+           size_err   Text   R   0x004005b4
+     error_location   Data   R   0x1000024a
+            newline   Data   R   0x1000026a
+             coor_A   Text   R   0x00400458
+             coor_B   Text   R   0x0040051c
+               copy   Data   R   0x1000006a
+                end   Text   R   0x00400604
+             breaks   Text   R   0x00400610
+               size   Data   R   0x10000000
+        clear_board   Text   R   0x0040037c
+       PRINT_STRING          A   0x00000004
+        error_cells   Data   R   0x100001fb
+             banner   Data   R   0x100000c4
+            bad_loc   Text   R   0x004005a0
+    compute_address   Text   R   0x00400584
+            INT_INT          A   0x00000001
+         live_A_err   Text   R   0x004005dc
+           get_gens   Text   R   0x004003d4
+            gen_err   Text   R   0x004005c8
+              start   Data   R   0x1000022f
+               EXIT          A   0x0000000a
+   error_generation   Data   R   0x10000170
+             live_A   Data   R   0x10000008
+             live_B   Data   R   0x1000000c
+        READ_STRING          A   0x00000008
+
+Module:  print_stuff.obj
+ Text segment:  396 bytes, load point 0x00400618
+ Data segment:  48 bytes, load point 0x10000270
+ Symbols:
+               Name Section Mode    Value
+           og_board   Text   R   0x00400688
+            print_A   Text   R   0x0040073c
+             bottom   Text   R   0x00400698
+                  A   Data   R   0x10000298
+                  B   Data   R   0x1000029a
+                top   Data   R   0x10000292
+         print_side   Text   R   0x0040078c
+       print_corner   Text   R   0x00400778
+           READ_INT          A   0x00000005
+             corner   Data   R   0x10000294
+        print_space   Text   R   0x00400728
+           new_line   Data   R   0x1000029c
+        print_array   Text   R   0x004006bc
+       PRINT_STRING          A   0x00000004
+               side   Data   R   0x10000290
+          print_top   Text   R   0x0040075c
+              space   Data   R   0x10000296
+        print_board   Text   R   0x00400618
+         inner_loop   Text   R   0x00400700
+     inner_loop_end   Text   R   0x00400750
+                bac   Text   R   0x004007a0
+          gen_part1   Data   R   0x10000270
+          gen_part2   Data   R   0x10000285
+               EXIT          A   0x0000000a
+        READ_STRING          A   0x00000008
+          PRINT_INT          A   0x00000001
+
+Module:  r2k_startup.obj
+ Text segment:  36 bytes, load point 0x004007a4
+ Symbols:
+               Name Section Mode    Value
+          SYS_EXIT2          A   0x00000011
+     __r2k__entry__   Text   RG  0x004007a8

@@ -1,0 +1,334 @@
+   1 0000               # File:		colony.asm
+   2 0000               # Author:	Nicholas Graca
+   3 0000               # Description:	Conways Game of Life in MIPS assembly
+   4 0000               #
+   5 0000               # Purpose:	To get an A in Concepts
+   6 0000               
+   7 0000               
+   8 0000               #Set things up and call the appropriate functions
+   9 0000               #Also implement the algorithm to make the game play properly
+  10 0000               #implement the algorithm
+  11 0000                       .text
+  12 0000                       .align 2
+  13 0000                       .globl compute_address
+  14 0000                       .globl print_board
+  15 0000                       .globl input
+  16 0000                       .globl board
+  17 0000                       .globl copy
+  18 0000               main:
+  19 0000 0C000000	        jal     input
+  20 0004 34180000	        li      $t8, 0         #gen counter
+  21 0008 3C090000	        la      $t1, board
+     000c 35290000
+  22 0010 0C000000	        jal     print_board     #print gen zero
+  23 0014 340E005A	        li      $t6, 90         #t6 row counter
+  24 0018 340F0000	        li      $t7, 0          #t7 col counter
+  25 001c 3C090000	        la      $t1, copy       #t1 address of copy
+     0020 35290000
+  26 0024 3C080000	        la      $t0, board      #t0 address of og board
+     0028 35080000
+  27 002c 0800000C	        j       copy_array
+  28 0030               
+  29 0030               #t6 and t7 need to 0 before you use copy
+  30 0030               #t1 is start address for copy
+  31 0030               #t0 is start address for OG Board
+  32 0030               #makes a copy of the board
+  33 0030               copy_array:                     
+  34 0030 100E0007	        beq     $zero, $t6, clean_up
+  35 0034 810A0000	        lb      $t2, 0($t0)
+  36 0038 A12A0000	        sb      $t2, 0($t1)
+  37 003c 21080001	        addi    $t0, $t0, 1
+  38 0040 21290001	        addi    $t1, $t1, 1
+  39 0044 21CEFFFF	        addi    $t6, $t6, -1
+  40 0048 0800000C	        j       copy_array
+  41 004c               
+  42 004c               go_back:
+  43 004c 03E00008	        jr      $ra
+  44 0050               
+  45 0050               #reset the pointers to each board after you copy
+  46 0050               clean_up:
+  47 0050 2129FFA6	        addi    $t1, $t1, -90
+  48 0054 2108FFA6	        addi    $t0, $t0, -90
+  49 0058 08000017	        j       run_loop
+  50 005c               
+  51 005c               #checks if it reaches the max generations
+  52 005c               run_loop:
+  53 005c 131100B3	        beq     $t8, $s1, fin
+  54 0060 08000021	        j       compute_neighbors
+  55 0064               
+  56 0064               #iterate the gen counter, switch which board you look at and keep looping
+  57 0064               cont_run:
+  58 0064 23180001	        addi    $t8, $t8, 1
+  59 0068 0C000000	        jal     print_board
+  60 006c 0100C821	        move    $t9, $t0                #change the board to look at
+  61 0070 01204021	        move    $t0, $t1
+  62 0074 03204821	        move    $t1, $t9
+  63 0078 340E005A	        li      $t6, 90
+  64 007c 0C00000C	        jal     copy_array
+  65 0080 08000017	        j       run_loop
+  66 0084               
+  67 0084               
+  68 0084               compute_neighbors:
+  69 0084 00009821	        move    $s3, $zero              #row counter
+  70 0088 0000A021	        move    $s4, $zero              #col counter
+  71 008c 00007021	        move    $t6, $zero              #used to reset row counter
+  72 0090 00007821	        move    $t7, $zero              #used to reset col counter
+  73 0094               
+  74 0094               neighbor_loop:
+  75 0094 120EFFF3	        beq     $s0, $t6, cont_run      #go through row
+  76 0098 0800002A	        j       n_in_loop
+  77 009c               
+  78 009c               #reset the col and iterate the row
+  79 009c               cont_neigh:
+  80 009c 00007821	        move    $t7, $zero
+  81 00a0 21CE0001	        addi    $t6, $t6, 1
+  82 00a4 08000025	        j       neighbor_loop
+  83 00a8               
+  84 00a8               #loops through each spot and adds up all the neighbors it has
+  85 00a8               n_in_loop:
+  86 00a8 11F0FFFC	        beq     $t7, $s0, cont_neigh     #go through col
+  87 00ac                       #t4 is A neighbors
+  88 00ac                       #t5 is B neighbors
+  89 00ac 00006021	        move    $t4, $zero
+  90 00b0 00006821	        move    $t5, $zero
+  91 00b4 01C09821	        move    $s3, $t6                #s3 is row
+  92 00b8 01E0A021	        move    $s4, $t7                #s4 is col
+  93 00bc 0C0000B9	        jal     comp_curr               #t3 is add computed
+  94 00c0 81670000	        lb      $a3, 0($t3)             #a3 is the center
+  95 00c4 01C09821	        move    $s3, $t6                #get the left spot
+  96 00c8 01E0A021	        move    $s4, $t7
+  97 00cc 2294FFFF	        addi    $s4, $s4, -1
+  98 00d0 0C0000A7	        jal     check_row
+  99 00d4 0C0000B0	        jal     check_col
+ 100 00d8 0C0000B9	        jal     comp_curr
+ 101 00dc 0C0000C3	        jal     count
+ 102 00e0 01C09821	        move    $s3, $t6                #get the bottom left spot
+ 103 00e4 01E0A021	        move    $s4, $t7
+ 104 00e8 2294FFFF	        addi    $s4, $s4, -1
+ 105 00ec 22730001	        addi    $s3, $s3, 1
+ 106 00f0 0C0000A7	        jal     check_row
+ 107 00f4 0C0000B0	        jal     check_col
+ 108 00f8 0C0000B9	        jal     comp_curr
+ 109 00fc 0C0000C3	        jal     count
+ 110 0100 01C09821	        move    $s3, $t6                #get the bottom spot
+ 111 0104 01E0A021	        move    $s4, $t7
+ 112 0108 22730001	        addi    $s3, $s3, 1
+ 113 010c 0C0000A7	        jal     check_row
+ 114 0110 0C0000B0	        jal     check_col
+ 115 0114 0C0000B9	        jal     comp_curr
+ 116 0118 0C0000C3	        jal     count
+ 117 011c 01C09821	        move    $s3, $t6                #get the bottom right spot
+ 118 0120 01E0A021	        move    $s4, $t7
+ 119 0124 22940001	        addi    $s4, $s4, 1
+ 120 0128 22730001	        addi    $s3, $s3, 1
+ 121 012c 0C0000A7	        jal     check_row
+ 122 0130 0C0000B0	        jal     check_col
+ 123 0134 0C0000B9	        jal     comp_curr
+ 124 0138 0C0000C3	        jal     count
+ 125 013c 01C09821	        move    $s3, $t6                #get the right spot
+ 126 0140 01E0A021	        move    $s4, $t7
+ 127 0144 22940001	        addi    $s4, $s4, 1
+ 128 0148 0C0000A7	        jal     check_row
+ 129 014c 0C0000B0	        jal     check_col
+ 130 0150 0C0000B9	        jal     comp_curr
+ 131 0154 0C0000C3	        jal     count
+ 132 0158 01C09821	        move    $s3, $t6                #get the top right spot
+ 133 015c 01E0A021	        move    $s4, $t7
+ 134 0160 22940001	        addi    $s4, $s4, 1
+ 135 0164 2273FFFF	        addi    $s3, $s3, -1
+ 136 0168 0C0000A7	        jal     check_row
+ 137 016c 0C0000B0	        jal     check_col
+ 138 0170 0C0000B9	        jal     comp_curr
+ 139 0174 0C0000C3	        jal     count
+ 140 0178 01C09821	        move    $s3, $t6                #get the top spot
+ 141 017c 01E0A021	        move    $s4, $t7
+ 142 0180 2273FFFF	        addi    $s3, $s3, -1
+ 143 0184 0C0000A7	        jal     check_row
+ 144 0188 0C0000B0	        jal     check_col
+ 145 018c 0C0000B9	        jal     comp_curr
+ 146 0190 0C0000C3	        jal     count
+ 147 0194 01C09821	        move    $s3, $t6                #get the top left spot
+ 148 0198 01E0A021	        move    $s4, $t7
+ 149 019c 2294FFFF	        addi    $s4, $s4, -1
+ 150 01a0 2273FFFF	        addi    $s3, $s3, -1
+ 151 01a4 0C0000A7	        jal     check_row
+ 152 01a8 0C0000B0	        jal     check_col
+ 153 01ac 0C0000B9	        jal     comp_curr
+ 154 01b0 0C0000C3	        jal     count                   #t4 is A neigh and t5 is B neigh
+ 155 01b4 34140001	        li      $s4, 1
+ 156 01b8 12870018	        beq     $s4, $a3, center_A      #if the center is an A
+ 157 01bc 34140002	        li      $s4, 2
+ 158 01c0 12870026	        beq     $s4, $a3, center_B      #if the center is a B
+ 159 01c4 018DA02A	        slt     $s4, $t4, $t5           #if the center is empty
+ 160 01c8 12800009	        beq     $s4, $zero, check_A
+ 161 01cc 01ACA022	        sub     $s4, $t5, $t4
+ 162 01d0 34130003	        li      $s3, 3
+ 163 01d4 1693000F	        bne     $s4, $s3, end_in_loop
+ 164 01d8 01C09821	        move    $s3, $t6
+ 165 01dc 01E0A021	        move    $s4, $t7
+ 166 01e0 0C0000BE	        jal     comp_addr
+ 167 01e4 34130002	        li      $s3, 2
+ 168 01e8 A1730000	        sb      $s3, 0($t3)
+ 169 01ec 08000085	        j       end_in_loop
+ 170 01f0               
+ 171 01f0               #find if the diffence in the types of neighbors is 3, if so cell becomes alive
+ 172 01f0               check_A:
+ 173 01f0 018DA022	        sub     $s4, $t4, $t5
+ 174 01f4 34130003	        li      $s3, 3
+ 175 01f8 16930006	        bne     $s4, $s3, end_in_loop
+ 176 01fc 01C09821	        move    $s3, $t6
+ 177 0200 01E0A021	        move    $s4, $t7
+ 178 0204 0C0000BE	        jal     comp_addr
+ 179 0208 34130001	        li      $s3, 1
+ 180 020c A1730000	        sb      $s3, 0($t3)
+ 181 0210 08000085	        j       end_in_loop
+ 182 0214               
+ 183 0214               end_in_loop:
+ 184 0214 21EF0001	        addi    $t7, $t7, 1             #increase col
+ 185 0218 0800002A	        j       n_in_loop
+ 186 021c               
+ 187 021c               #check if the amount of neighbors is greater than 1
+ 188 021c               center_A:
+ 189 021c 34140002	        li      $s4, 2
+ 190 0220 0194C82A	        slt     $t9, $t4, $s4
+ 191 0224 10190005	        beq     $zero, $t9, more_A
+ 192 0228 01C09821	        move    $s3, $t6
+ 193 022c 01E0A021	        move    $s4, $t7
+ 194 0230 0C0000BE	        jal     comp_addr
+ 195 0234 A1600000	        sb      $zero, 0($t3)           #if not, cell dies
+ 196 0238 08000085	        j       end_in_loop
+ 197 023c               
+ 198 023c               #check if the amount of neighbors is less than 4
+ 199 023c               more_A:         
+ 200 023c 34140003	        li      $s4, 3
+ 201 0240 028CA02A	        slt     $s4, $s4, $t4
+ 202 0244 1280FFF3	        beq     $s4, $zero, end_in_loop
+ 203 0248 01C09821	        move    $s3, $t6
+ 204 024c 01E0A021	        move    $s4, $t7
+ 205 0250 0C0000BE	        jal     comp_addr
+ 206 0254 A1600000	        sb      $zero, 0($t3)           #if not, cell dies
+ 207 0258 08000085	        j       end_in_loop
+ 208 025c               
+ 209 025c               #check if the amount of neighbors is greater than 1
+ 210 025c               center_B:
+ 211 025c 34140002	        li      $s4, 2
+ 212 0260 01B4C82A	        slt     $t9, $t5, $s4
+ 213 0264 10190005	        beq     $zero, $t9, more_B
+ 214 0268 01C09821	        move    $s3, $t6
+ 215 026c 01E0A021	        move    $s4, $t7
+ 216 0270 0C0000BE	        jal     comp_addr
+ 217 0274 A1600000	        sb      $zero, 0($t3)           #if not, cell dies
+ 218 0278 08000085	        j       end_in_loop
+ 219 027c               
+ 220 027c               #check if the amount of neighbors is less than 4
+ 221 027c               more_B:
+ 222 027c 34140003	        li      $s4, 3
+ 223 0280 028DA02A	        slt     $s4, $s4, $t5
+ 224 0284 1280FFE3	        beq     $s4, $zero, end_in_loop
+ 225 0288 01C09821	        move    $s3, $t6
+ 226 028c 01E0A021	        move    $s4, $t7
+ 227 0290 0C0000BE	        jal     comp_addr
+ 228 0294 A1600000	        sb      $zero, 0($t3)           #if not, cell dies
+ 229 0298 08000085	        j       end_in_loop
+ 230 029c               
+ 231 029c               #check if row is less than the size to compute wrapped neighbors        
+ 232 029c               check_row:
+ 233 029c 0270582A	        slt     $t3, $s3, $s0
+ 234 02a0 15600002	        bne     $t3, $zero, row2
+ 235 02a4 00009821	        move    $s3, $zero
+ 236 02a8 03E00008	        jr      $ra
+ 237 02ac               
+ 238 02ac               #check if row is greater than zero to compute wrapped neighbors
+ 239 02ac               row2:
+ 240 02ac 0260582A	        slt     $t3, $s3, $zero
+ 241 02b0 1160FF66	        beq     $t3, $zero, go_back
+ 242 02b4 02009821	        move    $s3, $s0
+ 243 02b8 2273FFFF	        addi    $s3, $s3, -1
+ 244 02bc 03E00008	        jr      $ra
+ 245 02c0               
+ 246 02c0               #check if col is less than size
+ 247 02c0               check_col:
+ 248 02c0 0290582A	        slt     $t3, $s4, $s0
+ 249 02c4 15600002	        bne     $t3, $zero, col2
+ 250 02c8 0000A021	        move    $s4, $zero
+ 251 02cc 03E00008	        jr      $ra
+ 252 02d0               
+ 253 02d0               #check if col is greater than zero
+ 254 02d0               col2:
+ 255 02d0 0280582A	        slt     $t3, $s4, $zero
+ 256 02d4 1160FF5D	        beq     $t3, $zero, go_back
+ 257 02d8 0200A021	        move    $s4, $s0
+ 258 02dc 2294FFFF	        addi    $s4, $s4, -1
+ 259 02e0 03E00008	        jr      $ra
+ 260 02e4               
+ 261 02e4               #computes the address to the board you are looking at
+ 262 02e4               comp_curr:                              #s3 is row, s4 is col
+ 263 02e4 02700018	        mult    $s3, $s0                #compute address to an B
+ 264 02e8 0000C812	        mflo    $t9
+ 265 02ec 03345820	        add     $t3, $t9, $s4
+ 266 02f0 01685820	        add     $t3, $t3, $t0           #t3 is the address you are looking for
+ 267 02f4 03E00008	        jr      $ra
+ 268 02f8               
+ 269 02f8               #computes the address to the board you are changing
+ 270 02f8               comp_addr:                              #s3 is row, s4 is col
+ 271 02f8 02700018	        mult    $s3, $s0                #compute address to an B
+ 272 02fc 0000C812	        mflo    $t9
+ 273 0300 03345820	        add     $t3, $t9, $s4
+ 274 0304 01695820	        add     $t3, $t3, $t1           #t3 is the address you are looking for
+ 275 0308 03E00008	        jr      $ra
+ 276 030c               
+ 277 030c               #adds up the 2 types of neighbors
+ 278 030c               count:
+ 279 030c 816A0000	        lb      $t2, 0($t3)
+ 280 0310 340B0001	        li      $t3, 1
+ 281 0314 154B0001	        bne     $t2, $t3, count_cont
+ 282 0318               
+ 283 0318               add_A:
+ 284 0318 218C0001	        addi    $t4, $t4, 1
+ 285 031c                    
+ 286 031c               count_cont:
+ 287 031c 340B0002	        li      $t3, 2
+ 288 0320 154BFF4A	        bne     $t2, $t3, go_back
+ 289 0324               
+ 290 0324               add_B:
+ 291 0324 21AD0001	        addi    $t5, $t5, 1
+ 292 0328 03E00008	        jr      $ra
+ 293 032c               
+ 294 032c               #exits program
+ 295 032c               fin:
+ 296 032c 3402000A	        li      $v0, 10
+ 297 0330 0000000C	        syscall
+
+
+add_A                00000318 R  text 
+add_B                00000324 R  text 
+board                ******** XG
+center_A             0000021C R  text 
+center_B             0000025C R  text 
+check_A              000001F0 R  text 
+check_col            000002C0 R  text 
+check_row            0000029C R  text 
+clean_up             00000050 R  text 
+col2                 000002D0 R  text 
+comp_addr            000002F8 R  text 
+comp_curr            000002E4 R  text 
+compute_address      ******** XG
+compute_neighbors    00000084 R  text 
+cont_neigh           0000009C R  text 
+cont_run             00000064 R  text 
+copy                 ******** XG
+copy_array           00000030 R  text 
+count                0000030C R  text 
+count_cont           0000031C R  text 
+end_in_loop          00000214 R  text 
+fin                  0000032C R  text 
+go_back              0000004C R  text 
+input                ******** XG
+main                 00000000 R  text 
+more_A               0000023C R  text 
+more_B               0000027C R  text 
+n_in_loop            000000A8 R  text 
+neighbor_loop        00000094 R  text 
+print_board          ******** XG
+row2                 000002AC R  text 
+run_loop             0000005C R  text 
